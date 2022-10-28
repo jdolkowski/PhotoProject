@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  photo-api:
+    container_name: photo-api
+    image: photo-api
+    command: sh docker-entrypoint.sh
+    ports:
+      - 8020:8020
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      - photo-postgres
+      - photo-nginx
+    env_file: photo_api/.env
+    volumes:
+      - .:/photo_api
+      - media:/media
+      - static:/static
+    networks:
+      - photo_net
+
+  photo-postgres:
+    image: library/postgres:13.1
+    container_name: photo-db
+    restart: unless-stopped
+    env_file: photo_api/.env
+    ports:
+      - 5432:5432
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+    networks:
+      - photo_net
+
+  photo-nginx:
+    image: nginx:latest
+    container_name: photo-nginx
+    restart: always
+    ports:
+      - '60:60'
+    volumes:
+      - ./nginx.main.conf:/nginx.conf
+    networks:
+      - photo_net
+
+volumes:
+  tailor-exp-postgres:
+    driver: local
+  media:
+  static:
+
+networks:
+  photo_net:
+    name: photo_net
+    driver: bridge
